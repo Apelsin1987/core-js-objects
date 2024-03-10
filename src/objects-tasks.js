@@ -360,32 +360,91 @@ function group(array, keySelector, valueSelector) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  resultArr: [],
+  hasElement: false,
+  hasId: false,
+  hasPseudo: false,
+  order: 0,
+
+  add(value) {
+    const newObj = { ...this };
+    newObj.resultArr = this.resultArr.concat(value);
+    return newObj;
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  stringify() {
+    const resultStr = this.resultArr.join('');
+    this.resultArr.length = 0;
+    return resultStr;
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  check(has, currOrder, newOrder) {
+    if (has)
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    if (currOrder > newOrder)
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    const order = 1;
+    this.check(this.hasElement, this.order, order);
+    const newObj = this.add(value);
+    newObj.hasElement = true;
+    newObj.order = order;
+    return newObj;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    const order = 2;
+    this.check(this.hasId, this.order, order);
+    const newObj = this.add(`#${value}`);
+    newObj.hasId = true;
+    newObj.order = order;
+    return newObj;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    const order = 3;
+    this.check(false, this.order, order);
+    const newObj = this.add(`.${value}`);
+    newObj.order = order;
+    return newObj;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    const order = 4;
+    this.check(false, this.order, order);
+    const newObj = this.add(`[${value}]`);
+    newObj.order = order;
+    return newObj;
+  },
+
+  pseudoClass(value) {
+    const order = 5;
+    this.check(false, this.order, order);
+    const newObj = this.add(`:${value}`);
+    newObj.order = order;
+    return newObj;
+  },
+
+  pseudoElement(value) {
+    const order = 6;
+    this.check(this.hasPseudo, this.order, order);
+    const newObj = this.add(`::${value}`);
+    newObj.hasPseudo = true;
+    newObj.order = order;
+    return newObj;
+  },
+
+  combine(selector1, combinator, selector2) {
+    const resultStr = `${selector1.resultArr.join(
+      ''
+    )} ${combinator} ${selector2.resultArr.join('')}`;
+    return this.add(resultStr);
   },
 };
 
